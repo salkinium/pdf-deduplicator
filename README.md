@@ -31,7 +31,8 @@ curl -s https://moves.rwth-aachen.de/teaching/ss-18/introduction-to-model-checki
 Deduplicate the hell out of them:
 
 ```
- ./deduplicate.py lec1.pdf lec2.pdf lec3.pdf lec4.pdf lec5.pdf lec6.pdf lec7.pdf lec08-2.pdf lec0910-2.pdf lec11-2.pdf
+ ./deduplicate.py --mask "0.92,0.95,1,1" lec1.pdf lec2.pdf lec3.pdf lec4.pdf \
+                                         lec5.pdf lec6.pdf lec7.pdf
 lec1.pdf          0 ( 0%) slides removed:  52 ->  52
 lec2.pdf         71 (58%) slides removed: 121 ->  50
 lec3.pdf         61 (53%) slides removed: 113 ->  52
@@ -39,20 +40,17 @@ lec4.pdf         65 (47%) slides removed: 136 ->  71
 lec5.pdf        100 (49%) slides removed: 202 -> 102
 lec6.pdf        113 (67%) slides removed: 167 ->  54
 lec7.pdf         94 (59%) slides removed: 159 ->  65
-lec08-2.pdf      84 (58%) slides removed: 144 ->  60
-lec0910-2.pdf   146 (62%) slides removed: 233 ->  87
-lec11-2.pdf      98 (55%) slides removed: 178 ->  80
-Total: 832 (55%) slides removed: 1505 -> 673
+Total: 504 (53%) slides removed: 950 -> 446
 ```
 
 ## Algorithm
 
-1. render each PDF slide into an *grayscale image* at 100 dpi (or similarly low resolution)
+1. render each PDF slide into an *grayscale image* at `--dpi=150` resolution
 2. *detect the edges* to get rid of the background
-3. *mask off* the page numbers in the lower right corner (this is theme dependent!)
+3. `--mask="x1,y1,x2,y2"` out anything that changes every slide (like page numbers)
 4. compute the *edge difference* between the last two slides
 5. *logically AND* this difference with the current collection image
-6. if *more than 5% collisions*: set current image as new collection image, *include prev. slide*
+6. if *more than `--threshold=0.05` collisions*: set current image as new collection image, *include prev. slide*
 7. otherwise: *add edge difference* on current reference image, *remove prev. slide*
 
 
@@ -72,11 +70,37 @@ Here are the image states for slides 2-9 from lecture 2.
 | ![](docs/i9.png) | ![](docs/o9.png) | ![](docs/d8.png) | ![](docs/c7.png) | ![](docs/a8.png) |
 
 
+## CLI
+
+```
+ $ ./deduplicate.py --help
+usage: deduplicate.py [-h] [--dpi DPI] [--suffix SUFFIX]
+                      [--threshold THRESHOLD] [--mask MASKS]
+                      slides [slides ...]
+
+Deduplicate PDF slides
+
+positional arguments:
+  slides                The PDF slides to deduplicate.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --dpi DPI             DPI resolution to perform the diff with.
+  --suffix SUFFIX       Suffix appended to the deduplicated slide.
+  --threshold THRESHOLD
+                        Maximum difference between slides to be considered the
+                        same slide.
+  --mask MASKS          Mask out differences in parts of the slide:
+                        `x1,y1,x2,y2`. Example: `--mask "0.92,0.96,1.0,1.0"`
+                        (lower right corner).
+```
+
+
 ## License
 
 This work is licensed under the BSD 3-clause license.
 
-> Copyright 2018 Niklas Hauser
+> Copyright 2019 Niklas Hauser
 > 
 > Redistribution and use in source and binary forms, with or without modification, 
 > are permitted provided that the following conditions are met:
